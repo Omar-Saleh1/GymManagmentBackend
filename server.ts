@@ -24,8 +24,6 @@ import transactionRoutes   from './routes/transactionRoutes';
 
 const app: Application = express();
 
-connectDB();
-
 app.use(cors({
   origin: true,
   credentials: true,
@@ -59,13 +57,24 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
-  initScheduler();         // start daily cron jobs
-  // Fire-and-forget — WhatsApp init is async and must not block HTTP or crash the server
+
+const startServer = async () => {
   try {
-    initWhatsAppClient();
+    await connectDB();
   } catch (err) {
-    console.error('[WhatsApp] Failed to start client bootstrap:', err);
+    console.error('Failed to connect to MongoDB:', err);
   }
-});
+
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running on http://localhost:${PORT}`);
+    initScheduler();         // start daily cron jobs
+    // Fire-and-forget — WhatsApp init is async and must not block HTTP or crash the server
+    try {
+      initWhatsAppClient();
+    } catch (err) {
+      console.error('[WhatsApp] Failed to start client bootstrap:', err);
+    }
+  });
+};
+
+startServer();
