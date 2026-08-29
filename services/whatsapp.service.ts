@@ -4,6 +4,7 @@ import makeWASocket, { DisconnectReason, useMultiFileAuthState } from '@whiskeys
 import pino from 'pino';
 import qrcode from 'qrcode';
 import { Boom } from '@hapi/boom';
+import mongoose from 'mongoose';
 
 import { useMongoDBAuthState, AuthModel } from './mongoAuthState';
 
@@ -35,6 +36,11 @@ export const getLatestQrDataUrl = () => {
 export async function initWhatsAppClient() {
   if (PROVIDER !== 'local') return;
   if (isInitializing || isConnected) return;
+
+  if (mongoose.connection.readyState !== 1) {
+    console.warn('[WhatsApp] MongoDB is not connected yet (readyState !== 1). Skipping WhatsApp initialization.');
+    return;
+  }
   
   isInitializing = true;
   bootstrapRequested = true;
